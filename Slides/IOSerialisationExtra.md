@@ -1,5 +1,11 @@
 # File I/O & Serialisation Extra
 
+### Topics
+1. Setting Up A Project
+2. Creating A Simple Logger
+3. Saving A Single Object
+4. Saving An Array List Of Objects
+
 ## Setting Up A Project
 
 ### Setting Up A Project
@@ -144,5 +150,181 @@ Go to www.github.com and register an account. I recommend creating one for your 
 * `Pull` changes from your remote repository to your local repository and your project.
   
 
+## Creating A Simple Logger
+
+   In this section we are going to create a simple Logger class. 
+   
+   This will be a very simple logger that is created when an application starts, provides a simple function that takes a string as an argument and writes that string to a file. The class will need to ensure any errors/exceptions are dealt with and that the file is closed properly before the code exits.
+
+### Approach - Top Down
+
+   I'm going to demonstrate this using a top down approach. In this apporach you start with the big concepts and put off worrying about the specifics/details of how things will be done until you need to worry about them.
+
+### Step One - A Logger Class
+
+   We need a logger class if we are going to make a logger class! We aren't going to worry about how it works, just about making it.
+
+   1. Add a new class - Logger
+   
+      Right click on the project in the Explorer side bar and select "New Java File - Class..." from the pop up menu. Enter "Logger" in the text box and press enter
+   
+   2. Create a Logger object
+   
+      We've created a Logger class, we need to create a Logger object to use it. 
+      
+      Switch to the `App.java` file and at the start of the main function create a logger object.
+
+      ```java
+      public static void main(String[] args) {        
+        Logger logger = new Logger();
+      ```
+   
+   3. Create a log file
+   
+      We've got a logger object. We know its job is to write messages to a log file so we obviously need a log file. Its only a simple logger, its only going to write to a single file. So we need a file name, and we'll need to know where that file is so we need a folder.
+
+      Lets create a `constructor` for **Logger** that takes two strings (a folder and a filename) and creates that file in that folder, ready for messages to be written to.
+
+      We want to create a file in a folder so we have a few things to do:
+
+      1. Check if the folder exists and if it doesn't then create it
+      2. Make the file and prepare it for writing
+      3. Ensure the program exits if we can't create the file so we don't try writing to a bad file handle.
+   
+         ```java
+         public class Logger {
+  
+            OutputStream output;
+         
+            Logger(String folder, String file){
+               // Check to see if the output folder exists and if does not then make it
+               File folderHandle = new File(folder);
+               if (!folderHandle.exists())
+               {
+                  folderHandle.mkdirs();
+               }
+
+               // create/open the file for logging
+               try {
+                  output = new FileOutputStream(folder+"\\"+file,true); // true to append, false/missing to create new blank file
+               }
+               catch (IOException e)
+               {
+                  // exit if we fail
+                  throw new RuntimeException(e);
+               }
+            }
+         }
+         ```
+
+         We've created a class variable to hold the handle to the file `output`. We know we need that handle to close the file and to write to it and we aren't doing that in the constructor so we need to store that handle for later use.
+
+         This isn't the best code. It doesn't check to see if the folder can be made because we are going to use a sub folder of the project we will be able to make.
+         
+         It also exits the code if the file can't be made. A better logger would instead note that it couldn't create the log file so that attempts to write to the log file resulted in output to the screen but let the app keep running. Its unlikely that not being able to write to a log should prevent an app doing whatever else it needs to do.
+
+         But this a simple logger so it will do.
+
+         We can update our `App.java` with the constructor arguments.
+
+            ```java
+            public static void main(String[] args) {        
+               Logger logger = new Logger("iofiles","log.txt");
+            }
+            ```
+   4. Close the logger file
+   
+      Exiting an app with handled still connected to objects is bad practice. Especially when those handles are holding files open. If we don't ensure the file is closed before we exit the app the file may be locked open and/or some of the log messages may be lost.
+
+      Here we create a `tidyUp` method in `Logger` that will be called before the app ends to close the folder.
+
+      ```java
+      public void tidyUp(){
+         // close the file safely
+         try {
+            output.close();
+         }
+         catch (IOException e)
+         {
+            throw new RuntimeException(e);
+         }
+      }
+      ```
+
+      Back in `App.java` we ensure that `tidyUp()` is called just before it exits.
+
+      ```java
+      public static void main(String[] args) {        
+         Logger logger = new Logger("iofiles","log.txt");
+
+
+
+
+
+         logger.tidyUp();
+      }
+      ```
+
+   5. Writing a message to the log file
+   
+   So our top down approach has meant our app opens and safely closes a log file. Great, but how do we write to it?
+
+   We need a public method `log` which takes a string argument. This way we can let anyone who has access to the logger write to the file.
+
+   ```java
+   public void log(String logString){
+      // write safely to file or crash gracefully(ish)
+      try {
+         output.write(logString.getBytes());
+         output.write(System.lineSeparator().getBytes());
+      }
+      catch (IOException e)
+      {
+         throw new RuntimeException(e);      
+      }
+   }
+   ```
+
+   Outputting to the file is really easy. We already have the file handle so all we have to do is use the `write` command and the `getBytes()` method to send the string to the file.
+
+   The line 
+   ```java
+   output.write(System.lineSeparator().getBytes());
+   ```
+   simply adds a new line at the end of the message so we don't end up with a long mess of text.
+
+   We can make it a bit more useful by adding a timestamp to the start of the message as shown below.
+
+   ```java
+     public void log(String logString){
+
+
+    // write safely to file or crash gracefully(ish)
+    try {
+      LocalTime now = LocalTime.now();
+      DateTimeFormatter formatter = DateTimeFormatter.ofPattern("hh:mm:ss");
+      String timeStamp = "["+now.format(formatter)+"] ";
+      output.write(timeStamp.getBytes());
+      output.write(logString.getBytes());
+      output.write(System.lineSeparator().getBytes());
+    }
+    catch (IOException e)
+    {
+      throw new RuntimeException(e);      
+    }
+  }
+  ```
+
+  That's our logger done. We've created the file when the `Logger` object is created and we've created `tidyUp()` so that the file is close before the app exits.
+
+  Anywhere in our code we want to write a log message we simple call
+
+  ```java
+  logger.log("Desired log message");
+
+## Saving A Single Object
+
+
+## Saving An Array List Of Objects
 
 
