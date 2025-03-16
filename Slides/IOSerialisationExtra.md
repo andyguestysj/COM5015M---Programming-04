@@ -322,9 +322,324 @@ Go to www.github.com and register an account. I recommend creating one for your 
   ```java
   logger.log("Desired log message");
 
+## A Simple App
+
+   I'm going to create a simple app that stores data on students. It is a very simple app. All it does is store data.
+
+### A Student Class
+
+   We'll start with a basic `Student` class to hold the details of a single student.
+
+   ```java
+   package com.example;
+
+   import java.io.Serializable;
+
+   public class Student {
+
+      String name;
+      String className;
+      String rollNo;
+   
+      //Constructor.
+      Student(String name, String className, String rollNo){
+         this.name = name;
+         this.className = className;
+         this.rollNo = rollNo;       
+      }
+
+      public void displayStudent(){
+         System.out.println(this.name + ", " + this.className + ", " + this.rollNo);
+      }
+
+      public String getName() { return name;}
+
+   }
+   ```
+
+   Like I said, a very simple class. It stores name, className and rollNo for a student. It has a simple display method and a method that returns a student's name.
+
+   We'll make one simple change. We want to log whenever a new student is added to the system. So now the constructor needs access to the logger.
+
+   ```java
+      //Constructor.
+      Student(String name, String className, String rollNo, Logger logger){
+         this.name = name;
+         this.className = className;
+         this.rollNo = rollNo;
+
+         logger.log("Student created [" + this.name + ", " + this.className + ", " + this.rollNo + "]");
+      }
+   ```
+
+   Now every time a student is created the students details should be written to the log.
+
+   We can test this.
+
+   ```java
+   public static void main(String[] args) {        
+      Logger logger = new Logger("iofiles","log.txt");
+
+      Student aStudent = new Student("John Smith","Art","11232",logger);
+
+      logger.tidyUp();
+   }
+   ```
+
 ## Saving A Single Object
 
+   1. Make Student Serializable
 
+   We're storing data in an object, how do we save that data? We don't want to have to store each bit of data one by one so we need to make the class `Serializable`. Fortunately thats nice and easy.
+
+   ```java
+   public class Student implements Serializable{
+   ```
+
+   We just have to make the `Student` class inherit from `Serializable`.
+
+   2. A File I/O Class
+   
+   I'm going to make a class which handles saving object data and I'm going to call it `FileIO`.
+   
+   ```java
+      public class FileIO {
+
+      String folder;
+
+      FileIO(String folder) {
+
+         this.folder = folder;
+         File folderHandle = new File(folder);
+         if (!folderHandle.exists()) {
+            folderHandle.mkdirs();
+         }
+
+      }
+   }
+   ```
+
+   Top down approach remember? We need a class that will store data in files (and eventually load data from files), it needs to know where to store the files and we need to make sure that location exits.
+
+   We add the line
+
+   ```java
+   FileIO fileHandler = new FileIO("iofiles");
+   ```
+
+   as the first line in `main`.
+
+   3. Saving A Student Object
+
+   We create a `saveStudent` method. It takes as arguments a student object, a string with the name of the file to save the student data to, and the logger handle so we can log what we've done.
+
+   ```java
+   public void saveStudent(Student s, String file, Logger logger) {
+      try (
+         // Creating FileOutputStream object.
+         FileOutputStream fos = new FileOutputStream(folder + "\\" + file);
+         // Creating ObjectOutputStream object.
+         ObjectOutputStream oos = new ObjectOutputStream(fos);) {
+         // write object.
+         oos.writeObject(s);
+         logger.log("Student [" + s.getName() + "] saved to file [" + folder + "\\" + file +"]");
+
+      } catch (IOException e) {
+         throw new RuntimeException(e);
+      }
+   }
+   ```   
+
+### Loading A Single Object
+   
+   We create a `loadStudent` method. It takes as arguments a string with the name of the file to save the student data to, and the logger handle so we can log what we've done and returns a student object.
+
+   ```java
+   public Student loadStudent(String file, Logger logger) {
+      try (
+         // Creating FileOutputStream object.
+         FileInputStream fis = new FileInputStream(folder + "\\" + file);
+         // Creating ObjectOutputStream object.
+         ObjectInputStream ois = new ObjectInputStream(fis);) {
+         // load object
+
+         // write object.
+         Student s = (Student) ois.readObject();
+         logger.log("Student [" + s.getName() + "] loaded from file [" + folder + "\\" + file +"]");
+         return s;
+      } catch (IOException e) {
+         throw new RuntimeException(e);
+      } catch (ClassNotFoundException e) {
+         throw new RuntimeException(e);
+      }
+      
+   }
+   ```
+
+   We have to cast the object that has beed read in back to `Student`. If the data isn't actually a student this could cause problems. But wwe are cocky programmers and we know that file will only contain a student object so we risk it..
+
+   We can test this by adding the following lines to main after we create the student object.
+
+   ```java
+   fileHandler.saveStudent(aStudents, "student_save.ser",logger);
+   fileHandler.loadStudent("student_save.ser",logger).displayStudent();
+   ```
+
+### A Student List Class
+
+   Storing information on a single student isn't much use and we'd rather have some sort of collection of students rather than a load of distinct student objects with different names. 
+
+   So we will use an array list.
+   
+   This should be pretty simple. 
+
+   We are going to store the handle for the logger in the StudentList class. This makes the rest of the cose tidier but means we can only use the one log file here. Both approaches are fine, it depends on your requirements.
+
+   We will see why `setStudentList` is required when we look at loading an array of student data.
+
+   ```java
+   public class StudentList {
+
+      Logger logger;
+
+      private ArrayList<Student> students = new ArrayList<Student>();
+
+      StudentList(Logger logger){		
+         this.logger = logger;
+         logger.log("Student list created");
+      }
+
+      public void addStudent(String name, String className, String rollNo){
+         students.add(new Student(name, className, rollNo, logger));    
+         logger.log("Student added to list [" + name + ", " + className + ", " + rollNo + "]");
+      }
+
+      public void displayList(){
+         System.out.println("List contains:");
+         for (Student s:students){
+            System.out.print("\t");
+            s.displayStudent();
+         }      
+      }
+
+      public Student getStudent(){
+         return students.get(0);
+      }
+
+     public  ArrayList<Student> getArray() { return students;}
+
+      public void setStudentList(ArrayList<Student> arrayStudents, Logger logger){
+         students = (ArrayList)arrayStudents.clone();
+         logger.log("Student list cloned");
+      }
+
+      public void populateStudentList(Logger logger){
+         String theStudents[][] = {
+            {"John Smith","Art","11932"},
+            {"Sally Brown","Maths","13154"},
+            {"Tom Hanks","History","98872"},
+            {"Chloe Burns","Art","72893"},
+            {"Halle Berry","Physics","43451"}
+         };
+
+         for (int i = 0; i< theStudents.length; i++){
+            addStudent(theStudents[i][0],theStudents[i][1],theStudents[i][2]);
+         }
+
+            logger.log("Student list populated");
+      }
+   }
+   ```
 ## Saving An Array List Of Objects
 
+   Turns out that saving an array of objects is pretty much the same as saving a single object.
 
+   ```java
+   public void saveStudentList(StudentList sl, String file, Logger logger) {
+      try (
+         // Creating FileOutputStream object.
+         FileOutputStream fos = new FileOutputStream(folder + "\\" + file);
+         // Creating ObjectOutputStream object.
+         ObjectOutputStream oos = new ObjectOutputStream(fos);) {
+         // write object.
+         oos.writeObject(sl.getArray());
+         logger.log("Student list saved to file [" + folder + "\\" + file +"]");
+
+      } catch (IOException e) {
+         throw new RuntimeException(e);
+      }
+   }
+   ```
+
+   Only difference is we pass in an array list of objects rather than a single object.
+
+   **Note** note that we aren't saving a single `StudentList` object, we are saving the array list of `Student` objects `students` from within `studentList`.
+
+### Loading An Array List Of Objects
+
+   This is a little trickier.
+
+   ```java
+   public  ArrayList<Student> loadStudentList(String file, Logger logger) {
+      try (
+         // Creating FileOutputStream object.
+         FileInputStream fis = new FileInputStream(folder + "\\" + file);
+         // Creating ObjectOutputStream object.
+         ObjectInputStream ois = new ObjectInputStream(fis);) {
+         // load object
+
+         // write object.
+         ArrayList<Student> sl = ( ArrayList<Student>) ois.readObject();
+         logger.log("Student list loaded from file [" + folder + "\\" + file +"]");
+         return sl;
+      } catch (IOException e) {
+         throw new RuntimeException(e);
+      } catch (ClassNotFoundException e) {
+         throw new RuntimeException(e);
+      }
+      
+   }
+   ```
+
+   We have to cast the loaded object data as an array list of Students (with all the risks mentioned in loading a single object).
+
+   What we end up with is an array list of Students and we want it to be stored in a `StudentList` object so we have to create that object and use the loaded list to populate it.
+
+   Our main looks something like this.
+
+   ```java
+      public static void main(String[] args) {
+
+         FileIO fileHandler = new FileIO("iofiles");
+         Logger logger = new Logger("iofiles","log.txt");
+         StudentList allStudents = new StudentList(logger);
+
+         allStudents.addStudent("James", "Art", "15404");        
+         allStudents.populateStudentList(logger);
+         allStudents.displayList();
+
+         fileHandler.saveStudent(allStudents.getStudent(), "student_save.ser",logger);
+         fileHandler.loadStudent("student_save.ser",logger).displayStudent();
+
+         fileHandler.saveStudentList(allStudents, "student_save.ser", logger);
+
+         StudentList newList = new StudentList(logger);
+         newList.setStudentList(fileHandler.loadStudentList("student_save.ser", logger), logger);
+
+         newList.displayList();
+
+         logger.tidyUp();
+
+
+      }
+   ```
+
+## Summary
+
+### Topics
+1. Setting Up A Project
+2. Creating A Simple Logger
+3. Saving A Single Object
+4. Saving An Array List Of Objects
+
+Source Repository https://github.com/andyguestysj/serialisation.git
