@@ -6,9 +6,14 @@
 3. Saving A Single Object
 4. Saving An Array List Of Objects
 
+Source Repository https://github.com/andyguestysj/serialisation.git
+
+
 ## Setting Up A Project
 
 ### Setting Up A Project
+
+Video - https://hmlupload.yorksj.ac.uk//Home/PlayTransfer/50998
 
 1. Get a GitHub account
 2. Setting Up Visual Studio Code
@@ -155,6 +160,9 @@ Go to www.github.com and register an account. I recommend creating one for your 
    In this section we are going to create a simple Logger class. 
    
    This will be a very simple logger that is created when an application starts, provides a simple function that takes a string as an argument and writes that string to a file. The class will need to ensure any errors/exceptions are dealt with and that the file is closed properly before the code exits.
+
+   Video - https://hmlupload.yorksj.ac.uk//Home/PlayTransfer/51001
+
 
 ### Approach - Top Down
 
@@ -321,6 +329,7 @@ Go to www.github.com and register an account. I recommend creating one for your 
 
   ```java
   logger.log("Desired log message");
+  ```
 
 ## A Simple App
 
@@ -387,6 +396,8 @@ Go to www.github.com and register an account. I recommend creating one for your 
    ```
 
 ## Saving A Single Object
+
+Vide0 - https://hmlupload.yorksj.ac.uk//Home/PlayTransfer/50999
 
    1. Make Student Serializable
 
@@ -553,6 +564,8 @@ Go to www.github.com and register an account. I recommend creating one for your 
 ## Saving An Array List Of Objects
 
    Turns out that saving an array of objects is pretty much the same as saving a single object.
+
+   video - https://hmlupload.yorksj.ac.uk//Home/PlayTransfer/51000
 
    ```java
    public void saveStudentList(StudentList sl, String file, Logger logger) {
