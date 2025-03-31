@@ -85,6 +85,8 @@ You'll see I've split the code in this project across a number of sub-folders. E
 
 ## TCP Sockets
 
+<div style="position:relative;padding-bottom:56%;padding-top:20px;height:0;"><iframe src="https://hml.yorksj.ac.uk/player?autostart=n&videoId=AHcAh3iA&captions=y&chapterId=0&playerJs=n" frameborder="0" scrolling="no" style="position:absolute;top:0;left:0;width:100%;height:100%;" allowfullscreen></iframe></div>
+
 OK on to the networking stuff proper.
 
 We'll start with sending messages between a client and server using TCP sockets. This will be a very simple setup where we:
